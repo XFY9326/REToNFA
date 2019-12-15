@@ -24,6 +24,7 @@ public class NFAMap {
     private String startNode;
     private String endNode;
     private String[] normalNodeList;
+    private String originalRegularExpression;
 
     private NFAMap() {
     }
@@ -42,6 +43,7 @@ public class NFAMap {
 
     private String getJSON() {
         JSONObject object = new JSONObject();
+        object.put("originalRegularExpression", originalRegularExpression);
         object.put("startNode", startNode);
         object.put("endNode", endNode);
         JSONArray nodeArray = new JSONArray();
@@ -102,9 +104,9 @@ public class NFAMap {
 
     public static class Builder {
         private static final String EPSILON = "ε";
+        private final ArrayList<Node> nodeArrayList = new ArrayList<>();
         private GrammarNode node;
         private int statusCounter = 0;
-        private final ArrayList<Node> nodeArrayList = new ArrayList<>();
 
         public Builder(GrammarNode node) throws NormalFormException {
             if (node != null) {
@@ -201,6 +203,7 @@ public class NFAMap {
 
             NFAMap nfaMap = new NFAMap();
             nfaMap.nodes = nodeArrayList.toArray(new Node[0]);
+            nfaMap.originalRegularExpression = node.getContentStr();
             nfaMap.startNode = String.valueOf(startNode);
             nfaMap.endNode = String.valueOf(endNode);
             int maxStatus = statusCounter--;

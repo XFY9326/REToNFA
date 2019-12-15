@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
     <title>NFA Map</title>
     <style>
         svg {
@@ -35,10 +36,12 @@
     </style>
 </head>
 <body onLoad="drawMap();">
-<h2>NFA Map -- Made By XFY9326</h2>
+<h2>NFA Map</h2>
+<h4 id="regular-expression" style="text-indent: 2em;"></h4>
 <svg id="dag-canvas" width="100%" height="100%">
     <g/>
 </svg>
+<h5>Made By XFY9326. Powered By DagreD3.</h5>
 
 <script src="js/d3.v4.min.js" charset="utf-8"></script>
 <script src="js/dagre-d3.min.js" charset="utf-8"></script>
@@ -46,6 +49,8 @@
 <script type="text/javascript" src="js/NFA.js" charset="utf-8"></script>
 <script type="text/javascript">
     // const NFAMapJSON = ;
+
+    document.getElementById("regular-expression").textContent = "Use Regular Expression: " + NFAMapJSON["originalRegularExpression"];
 
     let g = new dagreD3.graphlib.Graph({multigraph: true})
         .setGraph({
@@ -80,18 +85,18 @@
     g.setNode(NFAMapJSON["startNode"], {label: NFAMapJSON["startNode"], shape: "doubleCircle"});
     g.setNode(NFAMapJSON["endNode"], {label: NFAMapJSON["endNode"], shape: "doubleCircle"});
 
-    for (let i in NFAMapJSON["normalNodeList"]) {
-        g.setNode(NFAMapJSON["normalNodeList"][i], {label: NFAMapJSON["normalNodeList"][i], shape: "circle"});
-    }
+    NFAMapJSON["normalNodeList"].forEach(normalNode => {
+        g.setNode(normalNode, {label: normalNode, shape: "circle"});
+    });
 
-    for (let i in NFAMapJSON["edgeList"]) {
-        g.setEdge(NFAMapJSON["edgeList"][i]["fromNode"], NFAMapJSON["edgeList"][i]["toNode"], {
-            label: NFAMapJSON["edgeList"][i]["symbol"],
+    NFAMapJSON["edgeList"].forEach((edge, index) => {
+        g.setEdge(edge["fromNode"], edge["toNode"], {
+            label: edge["symbol"],
             arrowhead: "normal",
             minlen: 2,
             curve: d3.curveBasis
-        }, "edge" + i);
-    }
+        }, "edge" + index);
+    });
 
     function drawMap() {
         // noinspection JSPotentiallyInvalidConstructorUsage
@@ -111,7 +116,7 @@
         let yCenterOffset = (document.getElementById("dag-canvas").height.baseVal.value - g.graph().height) / 2;
         inner.attr("transform", "translate(" + xCenterOffset + ", " + yCenterOffset + ")");
 
-        let zoom = d3.zoom().scaleExtent([0.5, 3]).on("zoom", function () {
+        let zoom = d3.zoom().scaleExtent([0.5, 2]).on("zoom", function () {
             inner.attr("transform", "translate(" + (xCenterOffset + d3.event.transform.x / 2) + ", " + (yCenterOffset + d3.event.transform.y / 2) + ")scale(" + d3.event.transform.k + ")");
         });
         svg.call(zoom);
