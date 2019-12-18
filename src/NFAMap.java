@@ -18,7 +18,7 @@ public class NFAMap {
     private static final String DEFINE_JSON_STR = "const NFAMapJSON=";
     private static final String OUTPUT_PATH = "";
     private static final String OUTPUT_JS_NAME = "NFA.js";
-    private static final String OUTPUT_JS_FOLDER = "NFAMap/js";
+    private static final String OUTPUT_JS_FOLDER = "NFAMap" + File.separator + "js";
     private static final String[] RESOURCES_NFA_MAP = {"NFAMap/index.html", "NFAMap/js/d3.v4.min.js", "NFAMap/js/dagre-d3.min.js"};
     private Node[] nodes;
     private String startNode;
@@ -140,7 +140,7 @@ public class NFAMap {
 
                 // Loop and Leaf
                 if (currentNode.isLeafNode()) {
-                    addNode(mid, currentNode.getContentStr(), mid);
+                    addNode(mid, currentNode.getContentForm(), mid);
                 } else {
                     // Loop and not Leaf
                     if (currentNode.getCalculateSymbol() == Symbol.AND) {
@@ -168,7 +168,7 @@ public class NFAMap {
             } else {
                 // Not Loop and Leaf
                 if (currentNode.isLeafNode()) {
-                    addNode(start, currentNode.getContentStr(), end);
+                    addNode(start, currentNode.getContentForm(), end);
                 } else {
                     // Not Loop and not Leaf
                     if (currentNode.getCalculateSymbol() == Symbol.AND) {
@@ -203,7 +203,7 @@ public class NFAMap {
 
             NFAMap nfaMap = new NFAMap();
             nfaMap.nodes = nodeArrayList.toArray(new Node[0]);
-            nfaMap.originalRegularExpression = node.getContentStr();
+            nfaMap.originalRegularExpression = node.getContentForm();
             nfaMap.startNode = String.valueOf(startNode);
             nfaMap.endNode = String.valueOf(endNode);
             int maxStatus = statusCounter--;
