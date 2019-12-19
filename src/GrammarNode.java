@@ -41,16 +41,16 @@ public class GrammarNode {
         char[] builder = new char[charArr.length * 2];
         int builderSize = 0;
 
-        char lastWord = ' ';
+        char lastWord = '\0';
         int parenthesisCounter = 0;
         for (int i = 0; i < charArr.length; i++) {
             char c = charArr[i];
 
             // Delete useless char
-            if (c != ' ' && c != '\n' && c != '\r' && c != '\t') {
+            if (c != ' ' && c != '\n' && c != '\r' && c != '\t' && c != '\0') {
                 // Add AND Symbol
-                if (lastWord != ' '
-                        && lastWord != Symbol.AND
+                if (lastWord != '\0' &&
+                        lastWord != Symbol.AND
                         && lastWord != Symbol.OR
                         && lastWord != Symbol.PARENTHESIS_LEFT
                         && c != Symbol.AND
@@ -73,7 +73,7 @@ public class GrammarNode {
                     if (lastWord == Symbol.PARENTHESIS_LEFT) { // Delete () use
                         builderSize--;
                         if (builderSize == 0) {
-                            lastWord = ' ';
+                            lastWord = '\0';
                         } else {
                             lastWord = builder[builderSize - 1];
                         }
@@ -290,17 +290,5 @@ public class GrammarNode {
 
     public GrammarNode[] getChildNodes() {
         return this.childNodes;
-    }
-
-    @Override
-    public String toString() {
-        return "GrammarNode{" +
-                "isRootNode=" + isRootNode +
-                "isLeafNode=" + isLeafNode +
-                ", isLoopNode=" + isLoopNode +
-                ", contentForm=\"" + getContentForm() + "\"" +
-                ", calculateSymbol=" + (calculateSymbol == '\0' ? null : "\"" + calculateSymbol + "\"") +
-                ", childNodes=" + Arrays.toString(childNodes) +
-                '}';
     }
 }

@@ -14,14 +14,12 @@ public class Main {
         lastMillis = System.currentTimeMillis();
         GrammarNode grammarNode = new GrammarNode(input, true);
         System.out.println("Analyse Finished! (In " + (System.currentTimeMillis() - lastMillis) + " Millis)");
-        System.out.println("Analyse Result: " + grammarNode.toString());
 
         System.out.println("\nStarting Building NFA Map ...");
         lastMillis = System.currentTimeMillis();
-        NFAMap.Builder builder = new NFAMap.Builder(grammarNode);
-        NFAMap nfaMap = builder.build();
+        NFAMap.Builder builder = new NFAMap.Builder();
+        NFAMap nfaMap = builder.setNode(grammarNode).build();
         System.out.println("Building Finished! (In " + (System.currentTimeMillis() - lastMillis) + " Millis)");
-        System.out.println("Build Result: " + nfaMap.toString());
 
         System.out.println("\nGenerating NFA Map ...");
         lastMillis = System.currentTimeMillis();

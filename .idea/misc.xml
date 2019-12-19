@@ -3,6 +3,10 @@
   <component name="EncodingComponent">
     <option name="projectEncoding" />
   </component>
+  <component name="EntryPointsManager">
+    <pattern value="NFAMap.Builder" />
+    <pattern value="NFAMap.Builder" method="setStatusManager" />
+  </component>
   <component name="ProjectKey">
     <option name="state" value="project://e2804f05-5315-4fc6-a121-c522a6c26470" />
   </component>

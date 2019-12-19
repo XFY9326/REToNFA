@@ -8,7 +8,6 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 
 /**
@@ -20,7 +19,7 @@ public class NFAMap {
     private static final String OUTPUT_JS_NAME = "NFA.js";
     private static final String OUTPUT_JS_FOLDER = "NFAMap" + File.separator + "js";
     private static final String[] RESOURCES_NFA_MAP = {"NFAMap/index.html", "NFAMap/js/d3.v4.min.js", "NFAMap/js/dagre-d3.min.js"};
-    private Node[] nodes;
+    private Edge[] edges;
     private String startNode;
     private String endNode;
     private String[] normalNodeList;
@@ -29,8 +28,8 @@ public class NFAMap {
     private NFAMap() {
     }
 
-    public Node[] getNodes() {
-        return nodes;
+    public Edge[] getEdges() {
+        return edges;
     }
 
     public String getStartNode() {
@@ -50,7 +49,7 @@ public class NFAMap {
         Collections.addAll(nodeArray, normalNodeList);
         object.put("normalNodeList", nodeArray);
         JSONArray edgeArray = new JSONArray();
-        for (Node edge : nodes) {
+        for (Edge edge : edges) {
             JSONObject nodeObject = new JSONObject();
             nodeObject.put("fromNode", edge.from);
             nodeObject.put("toNode", edge.to);
@@ -88,53 +87,41 @@ public class NFAMap {
         }
     }
 
-    @Override
-    public String toString() {
-        return "NFAMap{" +
-                "nodes=" + Arrays.toString(nodes) +
-                ", startNode=\"" + startNode + "\"" +
-                ", endNode=\"" + endNode + "\"" +
-                ", normalNodeList=" + Arrays.toString(normalNodeList) +
-                '}';
-    }
-
     public String[] getNormalNodeList() {
         return normalNodeList;
     }
 
-    public static class Builder {
+    public interface StatusManager {
+        String getStartStatus();
+
+        String getEndStatus();
+
+        String getNewStatus();
+
+        String[] getNormalStatusArray();
+    }
+
+    public final static class Builder {
         private static final String EPSILON = "ε";
-        private final ArrayList<Node> nodeArrayList = new ArrayList<>();
+        private final ArrayList<Edge> edgeArrayList = new ArrayList<>();
         private GrammarNode node;
-        private int statusCounter = 0;
+        private StatusManager statusManager;
 
-        public Builder(GrammarNode node) throws NormalFormException {
-            if (node != null) {
-                this.node = node;
-            } else {
-                throw new NormalFormException("This node can't be built!");
-            }
-        }
-
-        private int getNewStatusNum() {
-            return this.statusCounter++;
-        }
-
-        private void addNode(int from, String symbol, int to) {
-            this.nodeArrayList.add(new Node(String.valueOf(from), symbol, String.valueOf(to)));
+        private void addNode(String from, String symbol, String to) {
+            this.edgeArrayList.add(new Edge(String.valueOf(from), symbol, String.valueOf(to)));
         }
 
         /**
-         * Get NFA Node List
+         * Get NFA Edge List
          *
          * @param currentNode Grammar Node
          * @param start       Start status
          * @param end         End status
          */
-        private void recursionGrammarNodes(GrammarNode currentNode, int start, int end) {
+        private void recursionGrammarNodes(GrammarNode currentNode, String start, String end) {
             // Loop
             if (currentNode.isLoopNode()) {
-                int mid = getNewStatusNum();
+                String mid = statusManager.getNewStatus();
                 addNode(start, EPSILON, mid);
                 addNode(mid, EPSILON, end);
 
@@ -145,13 +132,13 @@ public class NFAMap {
                     // Loop and not Leaf
                     if (currentNode.getCalculateSymbol() == Symbol.AND) {
                         GrammarNode[] nodes = currentNode.getChildNodes();
-                        int childStart = mid;
-                        int childEnd;
+                        String childStart = mid;
+                        String childEnd;
                         for (int i = 0; i < nodes.length; i++) {
                             if (i == nodes.length - 1) {
                                 childEnd = mid;
                             } else {
-                                childEnd = getNewStatusNum();
+                                childEnd = statusManager.getNewStatus();
                             }
                             recursionGrammarNodes(nodes[i], childStart, childEnd);
                             childStart = childEnd;
@@ -173,13 +160,13 @@ public class NFAMap {
                     // Not Loop and not Leaf
                     if (currentNode.getCalculateSymbol() == Symbol.AND) {
                         GrammarNode[] nodes = currentNode.getChildNodes();
-                        int childStart = start;
-                        int childEnd;
+                        String childStart = start;
+                        String childEnd;
                         for (int i = 0; i < nodes.length; i++) {
                             if (i == nodes.length - 1) {
                                 childEnd = end;
                             } else {
-                                childEnd = getNewStatusNum();
+                                childEnd = statusManager.getNewStatus();
                             }
                             recursionGrammarNodes(nodes[i], childStart, childEnd);
                             childStart = childEnd;
@@ -196,31 +183,76 @@ public class NFAMap {
             }
         }
 
-        public NFAMap build() {
-            int startNode = getNewStatusNum();
-            int endNode = getNewStatusNum();
+        public NFAMap build() throws NormalFormException {
+            if (node == null) {
+                throw new NormalFormException("This node can't be built!");
+            }
+            if (statusManager == null) {
+                statusManager = new DefaultStatusManager();
+            }
+
+            String startNode = statusManager.getStartStatus();
+            String endNode = statusManager.getEndStatus();
+
             recursionGrammarNodes(node, startNode, endNode);
 
             NFAMap nfaMap = new NFAMap();
-            nfaMap.nodes = nodeArrayList.toArray(new Node[0]);
+            nfaMap.edges = edgeArrayList.toArray(new Edge[0]);
             nfaMap.originalRegularExpression = node.getContentForm();
-            nfaMap.startNode = String.valueOf(startNode);
-            nfaMap.endNode = String.valueOf(endNode);
-            int maxStatus = statusCounter--;
-            nfaMap.normalNodeList = new String[maxStatus - 2];
-            for (int i = 2; i < maxStatus; i++) {
-                nfaMap.normalNodeList[i - 2] = String.valueOf(i);
-            }
+            nfaMap.startNode = startNode;
+            nfaMap.endNode = endNode;
+            nfaMap.normalNodeList = statusManager.getNormalStatusArray();
+
             return nfaMap;
+        }
+
+        public Builder setNode(GrammarNode node) {
+            this.node = node;
+            return this;
+        }
+
+        public Builder setStatusManager(StatusManager statusManager) {
+            this.statusManager = statusManager;
+            return this;
         }
     }
 
-    public static class Node {
+    private final static class DefaultStatusManager implements StatusManager {
+        private static final int startStatus = 0;
+        private static final int endStatus = 1;
+        private int statusCounter = 1;
+
+        @Override
+        public String getStartStatus() {
+            return String.valueOf(startStatus);
+        }
+
+        @Override
+        public String getEndStatus() {
+            return String.valueOf(endStatus);
+        }
+
+        @Override
+        public String getNewStatus() {
+            return String.valueOf(++statusCounter);
+        }
+
+        @Override
+        public String[] getNormalStatusArray() {
+            String[] result = new String[statusCounter - 1];
+            for (int i = 2; i <= statusCounter; i++) {
+                result[i - 2] = String.valueOf(i);
+            }
+            return result;
+        }
+    }
+
+    public static class Edge {
         private final String from;
         private final String symbol;
         private final String to;
 
-        Node(String from, String symbol, String to) {
+        Edge(String from, String symbol, String to) {
             this.from = from;
             this.symbol = symbol;
             this.to = to;
